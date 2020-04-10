@@ -1,8 +1,11 @@
 cmake_minimum_required(VERSION 2.8)
 
 project(iocolors)
-
-set(CMAKE_CXX_FLAGS "-Wall -Werrow -Wextra -Wpedantic -O3" )
+if(WIN32)
+    # TODO: figure it out
+else()
+    set(CMAKE_CXX_FLAGS "-Wall -Werrow -Wextra -Wpedantic -O3" )
+endif()
 
 set(CMAKE_INSTALL_PREFIX ${PROJECT_BINARY_DIR}/install)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
