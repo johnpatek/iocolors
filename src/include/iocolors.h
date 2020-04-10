@@ -1,26 +1,68 @@
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdint.h>
+
+typedef struct
+{
+    uint8_t buf[12];
+    uint8_t good;
+} font_t;
+
+enum styles
+{
+    NONE = 0,
+    BRIGHT = 1,
+    DIM = 2,
+    UNDERSCORE = 4,
+    BLINK = 5,
+    REVERSE = 7,
+    HIDDEN = 8
+};
 
 enum colors
 {
+    DEFAULT,
+    BLACK,
     RED,
     GREEN,
     YELLOW,
     BLUE,
     MAGENTA,
     CYAN,
-    BOLD_RED,
-    BOLD_GREEN,
-    BOLD_YELLOW,
-    BOLD_BLUE,
-    BOLD_MAGENTA,
-    BOLD_CYAN,
-    DEFAULT
+    WHITE
 };
 
 /**
- * @brief Formatted print to standard error in a specific color
- * @param[in] color Desired color for the text.
+ * @brief Encode a font
+ * @param[out] font A pointer to the encoded font
+ * @param[in] style The desired formatting style
+ * @param[in] foreground The desired foreground font
+ * @param[in] background The desired background font
+ * @return 0 on success, nonzero on failure.
+ */
+int encode_font(
+    font_t * const font, 
+    uint8_t style, 
+    uint8_t foreground, 
+    uint8_t background);
+
+/**
+ * @brief Decode a font
+ * @param[in] font A previously encoded font
+ * @param[out] style The decoded formatting style
+ * @param[out] foreground The decoded foreground font
+ * @param[out] background The decoded background font
+ * @return 0 on success, nonzero on failure.
+ */
+int decode_font(
+    const font_t * const font, 
+    uint8_t * const style, 
+    uint8_t * const foreground, 
+    uint8_t * const background);
+
+/**
+ * @brief Formatted print to standard error in a specific font
+ * @param[in] font Desired font for the text.
  * @param[in] format C string containing text to be printed, with
  *                   optional format specifiers embedded.
  * @param[in] ... Values to be printed if format specifiers are
@@ -28,20 +70,20 @@ enum colors
  * @return On success, the total number of characters written is 
  *         returned. If error occurs, a negative number is returned.
  */
-int color_eprintf(int color, const char * const format, ...);
+int ioc_eprintf(const font_t * const font, const char * const format, ...);
 
 /**
- * @brief Write string to standard error in a specific color and 
+ * @brief Write string to standard error in a specific font and 
  *        append newline
  * @param[in] str C string to be printed.
  * @return On success, the total number of characters written is 
  *         returned. If error occurs, a negative number is returned.
  */
-int color_eputs(int color, const char * const str);
+int ioc_eputs(const font_t * const font, const char * const str);
 
 /**
- * @brief Formatted print to standard output in a specific color
- * @param[in] color Desired color for the text.
+ * @brief Formatted print to standard output in a specific font
+ * @param[in] font Desired font for the text.
  * @param[in] format C string containing text to be printed, with
  *                   optional format specifiers embedded.
  * @param[in] ... Values to be printed if format specifiers are
@@ -49,10 +91,16 @@ int color_eputs(int color, const char * const str);
  * @return On success, the total number of characters written is 
  *         returned. If error occurs, a negative number is returned.
  */
-int color_printf(int color, const char * const format, ...);
+int ioc_printf(const font_t * const font, const char * const format, ...);
 
-
-int color_puts(int color, const char * const str);
+/**
+ * @brief Write string to standard output in a specific font and 
+ *        append newline
+ * @param[in] str C string to be printed.
+ * @return On success, the total number of characters written is 
+ *         returned. If error occurs, a negative number is returned.
+ */
+int ioc_puts(const font_t * const font, const char * const str);
 
 /**
  * @brief Formatted print to standard error
@@ -73,10 +121,28 @@ int eprintf(const char * const format, ...);
  */
 int eputs(const char * const str);
 
-int set_stderr_color(int color);
+/**
+ * @brief Set stderr font
+ * @param[in] font Desired font for stderr
+ * @return 0 on success, nonzero on failure
+ */
+int ioc_set_stderr_font(const font_t * const font);
 
-int set_stdout_color(int color);
+/**
+ * @brief Set stdout font
+ * @param[in] font Desired font for stderr
+ * @return 0 on success, nonzero on failure
+ */
+int ioc_set_stdout_font(const font_t * const font);
 
-int reset_stderr_color();
+/**
+ * @brief Reset stderr font
+ * @return 0 on success, nonzero on failure
+ */
+int ioc_reset_stderr_font();
 
-int reset_stdout_color();
+/**
+ * @brief Reset stdout font
+ * @return 0 on success, nonzero on failure
+ */
+int ioc_reset_stdout_font();

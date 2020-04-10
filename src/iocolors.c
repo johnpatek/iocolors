@@ -1,63 +1,185 @@
 #include "iocolors.h"
 
+int encode_font(
+    font_t * const font, 
+    uint8_t style, 
+    uint8_t foreground, 
+    uint8_t background)
+{
+    int error;
 
-static int encode_color(int color, const char ** code);
+    error = (font == NULL);
 
-int color_eprintf(int color, const char * const format, ...)
+    if(error == 0)
+    {
+        switch(style)
+        {
+            case NONE:
+                break;
+            default:
+                error = 1;
+        }
+    }
+
+    if(error == 0)
+    {
+        switch(foreground)
+        {
+            case DEFAULT:
+                foreground = 0;
+                break;
+            case BLACK:
+            case RED:
+            case GREEN:
+            case YELLOW:
+            case BLUE:
+            case MAGENTA:
+            case CYAN:
+            case WHITE:
+                foreground += 29;
+                break;
+            default:
+                error = 1;
+        }
+    }
+
+    if(error == 0)
+    {
+        switch (background)
+        {
+            case DEFAULT:
+                background = 0;
+                break;
+            case BLACK:
+            case RED:
+            case GREEN:
+            case YELLOW:
+            case BLUE:
+            case MAGENTA:
+            case CYAN:
+            case WHITE:
+                background += 39;
+                break;
+            default:
+                error = 1;
+        }
+    }
+
+    error =  (error != 0) || (sprintf(
+        (char*)font->buf,
+        "\033[%hhu;%hhu;%hhum",
+        style,
+        foreground,
+        background) < 0);
+    
+    font->good = (error == 0);
+
+    return error;    
+}
+
+int decode_font(
+    const font_t * const font, 
+    uint8_t * const style, 
+    uint8_t * const foreground, 
+    uint8_t * const background)
+{
+    int error;
+    uint8_t tmp_stl, tmp_fg, tmp_bg;
+
+    error = (font->good != 0);
+
+    error = error || (sscanf(
+        (char*)font->buf,
+        "\033[%hhu;%hhu;%hhu",
+        &tmp_stl,
+        &tmp_fg,
+        &tmp_fg) < 0);
+
+    if(!error)
+    {
+        *style = tmp_stl;
+
+        if(tmp_fg != DEFAULT)
+        {
+            *foreground = tmp_fg % 39;
+        }
+        else
+        {
+            *foreground = DEFAULT;
+        }
+        
+        if(tmp_bg != DEFAULT)
+        {
+            *background = tmp_bg % 39;
+        }
+        else
+        {
+            *background = DEFAULT;
+        }
+    }
+
+    return error;
+}
+
+int ioc_eprintf(const font_t * const font, const char * const format, ...)
 {
     int result;
     va_list args;
-    
-    set_stderr_color(color);
-    
-    va_start(args, format);
-    
-    result = vfprintf(stderr, format, args);
-    
-    reset_stderr_color();
-    
+
+    va_start(args,format);
+
+    result = ioc_set_stderr_font(font)?-1:0;
+
+    result = (result < 0)?-1:vfprintf(stderr,format,args);
+
+    result = (result < 0)?result:(
+        ioc_reset_stderr_font() == 0)?result:-1;
+
     return result;
 }
 
-int color_eputs(int color, const char * const str)
+int ioc_eputs(const font_t * const font, const char * const str)
 {
-    int result; 
+    int result;
+    
+    result = ioc_set_stderr_font(font)?-1:0;
 
-    set_stderr_color(color);
-    
-    result = eputs(str);
-    
-    reset_stderr_color();
+    result = (result < 0)?-1:eputs(str);
+
+    result = (result < 0)?result:(
+        ioc_reset_stderr_font() == 0)?result:-1;
 
     return result;
 }
 
-int color_printf(int color, const char * const format, ...)
+int ioc_printf(const font_t * const font, const char * const format, ...)
 {
     int result;
     va_list args;
 
-    set_stdout_color(color);
-    
-    va_start(args, format);
-    
-    result = printf(format,args);
-    
-    reset_stdout_color();
-    
-    return result ;
+    va_start(args,format);
+
+    result = ioc_set_stdout_font(font)?-1:0;
+
+    result = (result < 0)?-1:printf(format,args);
+
+    result = (result < 0)?result:(
+        ioc_reset_stdout_font() == 0)?result:-1;
+
+    return result;
 }
 
-int color_puts(int color, const char * const str)
+int ioc_puts(const font_t * const font, const char * const str)
 {
     int result;
     
-    set_stdout_color(color);
-    
-    result = puts(str);
-    
-    reset_stdout_color();
-    
+    result = ioc_set_stdout_font(font)?-1:0;
+
+    result = (result < 0)?-1:puts(str);
+
+    result = (result < 0)?result:(
+        ioc_reset_stdout_font() == 0)?result:-1;
+
     return result;
 }
 
@@ -65,7 +187,7 @@ int eprintf(const char * const format, ...)
 {
     va_list args;
     va_start(args, format);
-    return vfprintf(stderr, format, args);
+    return vfprintf(stderr, format, args);    
 }
 
 int eputs(const char * const str)
@@ -73,88 +195,26 @@ int eputs(const char * const str)
     return eprintf("%s\n",str);
 }
 
-int set_stderr_color(int color)
+int ioc_set_stderr_font(const font_t * const font)
 {
-    char * code;
-    int error;
-
-    error = encode_color(color,&code);
-
-    error = (error > 0) || (eprintf((const char * const)code) < 0);
-    
-    return error;
+    return (font->good !=0) || (eprintf(
+        "%s",
+        (char*)font->buf) < 0);
 }
 
-int set_stdout_color(int color)
+int ioc_set_stdout_font(const font_t * const font)
 {
-    char * code;
-    int error;
-
-    error = encode_color(color,&code);
-
-    error = (error > 0) || (printf((const char * const)code) < 0);
-
-    return error;
+    return (font->good !=0) || (printf(
+        "%s",
+        (char*)font->buf) < 0);
 }
 
-int reset_stderr_color()
+int ioc_reset_stderr_font()
 {
-    return set_stderr_color(DEFAULT);
+    return eprintf("\033[0m") < 0;
 }
 
-int reset_stdout_color()
+int ioc_reset_stdout_font()
 {
-    return set_stdout_color(DEFAULT);
-}
-
-static int encode_color(int color, const char ** code)
-{
-    int result = 0;
-    switch (color)
-    {
-    case RED:
-        *code = "\033[0;31m";
-        break;
-    case GREEN:
-        *code = "\033[0;32m";
-        break;
-    case YELLOW:
-        *code = "\033[0;33m";
-        break;
-    case BLUE:
-        *code = "\033[0;34m";
-        break;
-    case MAGENTA:
-        *code = "\033[0;35m";
-        break;
-    case CYAN:
-        *code = "\033[0;36m";
-        break;
-    case BOLD_RED:
-        *code = "\033[1;31m";
-        break;
-    case BOLD_GREEN:
-        *code = "\033[1;32m";
-        break;
-    case BOLD_YELLOW:
-        *code = "\033[1;33m";
-        break;
-    case BOLD_BLUE:
-        *code = "\033[1;34m";
-        break;
-    case BOLD_MAGENTA:
-        *code = "\033[1;35m";
-        break;
-    case BOLD_CYAN:
-        *code = "\033[1;36m";
-        break;
-    case DEFAULT:
-        *code = "\033[0m";
-        break;
-    default:
-        *code = NULL;
-        result = 1;
-        break;
-    }
-    return result;
+    return printf("\033[0m") < 0;
 }
