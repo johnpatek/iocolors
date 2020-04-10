@@ -1,3 +1,8 @@
+/**
+ * @file
+ * @brief This file contains the functions from the iocolors API
+ */
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdint.h>
