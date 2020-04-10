@@ -6,10 +6,12 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdint.h>
+#define IOC_BUFFER_SIZE 12
+
 
 typedef struct
 {
-    uint8_t buf[12];
+    uint8_t buf[IOC_BUFFER_SIZE];
     uint8_t good;
 } font_t;
 
