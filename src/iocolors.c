@@ -15,6 +15,12 @@ int encode_font(
         switch (style)
         {
         case NONE:
+        case BRIGHT:
+        case DIM:
+        case UNDERSCORE:
+        case BLINK:
+        case REVERSE:
+        case HIDDEN:
             break;
         default:
             error = 1;
