@@ -12,10 +12,15 @@ int encode_font(
 
     if (error == 0)
     {
-        printf("st = %hhu\n", style);
         switch (style)
         {
         case NONE:
+        case BRIGHT:
+        case DIM:
+        case UNDERSCORE:
+        case BLINK:
+        case REVERSE:
+        case HIDDEN:
             break;
         default:
             error = 1;
@@ -24,7 +29,6 @@ int encode_font(
 
     if (error == 0)
     {
-        printf("fg = %hhu\n", foreground);
         switch (foreground)
         {
         case DEFAULT:
@@ -47,7 +51,6 @@ int encode_font(
 
     if (error == 0)
     {
-        printf("bg = %hhu\n", background);
         switch (background)
         {
         case DEFAULT:
@@ -99,14 +102,23 @@ int decode_font(
     int error;
     int tmp_stl, tmp_fg, tmp_bg;
 
-    error = (font->good != 0);
+    error = (font->good == 0);
 
+#ifdef _WIN32
     error = error || (sscanf_s(
         (char*)font->buf,
         "\033[%d;%d;%d",
         &tmp_stl,
         &tmp_fg,
         &tmp_bg) < 0);
+#else
+    error = error || (sscanf(
+        (char*)font->buf,
+        "\033[%d;%d;%d",
+        &tmp_stl,
+        &tmp_fg,
+        &tmp_bg) < 0);
+#endif
 
     if (!error)
     {
@@ -114,7 +126,7 @@ int decode_font(
 
         if (tmp_fg != DEFAULT)
         {
-            *foreground = (uint8_t)tmp_fg % 39;
+            *foreground = (uint8_t)(tmp_fg % 29);
         }
         else
         {
@@ -123,7 +135,7 @@ int decode_font(
 
         if (tmp_bg != DEFAULT)
         {
-            *background = (uint8_t)tmp_bg % 39;
+            *background = (uint8_t)(tmp_bg % 39);
         }
         else
         {
@@ -174,7 +186,7 @@ int ioc_printf(const font_t* const font, const char* const format, ...)
 
     result = ioc_set_stdout_font(font) ? -1 : 0;
 
-    result = (result < 0) ? -1 : printf(format, args);
+    result = (result < 0) ? -1 : vprintf(format, args);
 
     result = (result < 0) ? result : (
         ioc_reset_stdout_font() == 0) ? result : -1;
