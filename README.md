@@ -19,11 +19,11 @@ and provide identical return values.
 ### Creating a font
 
 Before printing your colored output, you must create a font. A font 
-can easily be created using the `encode_font()` function.
+can easily be created using the `ioc_encode_font()` function.
 
 ```c
 font_t font;
-encode_font(&font, BRIGHT, GREEN, BLUE);
+ioc_encode_font(&font, BRIGHT, GREEN, BLUE);
 ```
 
 For more information on available font options, see `iocolors.h`.

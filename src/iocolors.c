@@ -1,6 +1,6 @@
 #include "iocolors.h"
 
-int encode_font(
+int ioc_encode_font(
     font_t* const font,
     uint8_t style,
     uint8_t foreground,
@@ -93,7 +93,7 @@ int encode_font(
     return error;
 }
 
-int decode_font(
+int ioc_decode_font(
     const font_t* const font,
     uint8_t* const style,
     uint8_t* const foreground,
