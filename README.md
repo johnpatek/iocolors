@@ -58,7 +58,7 @@ puts("This is a line with the default colors");
 
 ## TODO List
 
-- [ ] Support for updated Windows Command Prompt
+- [x] Support for updated Windows Command Prompt
 - [x] CPack for Linux/Unix
 - [ ] CPack for Windows(Please help!!)
 

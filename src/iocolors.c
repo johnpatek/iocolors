@@ -325,44 +325,101 @@ int eputs(const char* const str)
 
 static HANDLE stderr_handle;
 static HANDLE stdout_handle;
-static DWORD stderr_mode;
-static DWORD stdout_mode;
+static DWORD stderr_init_mode;
+static DWORD stdout_init_mode;
 
-static int setup_console(int handle);
-static int reset_console(int handle);
+static int setup_console(int std_handle, HANDLE * handle, DWORD * init_mode);
+static int reset_console(HANDLE handle, DWORD init_mode);
 
 int ioc_set_stderr_font(const ioc_font_t* const font)
 {
-    return (font->good == 0) || (eprintf(
+    int error;
+
+    error = (font == NULL);
+
+    error = (error != 0) || (font->good == 0);
+
+    error = (error != 0) || (setup_console(
+        STD_ERROR_HANDLE,
+        &stderr_handle,
+        &stderr_init_mode) != 0);
+    
+    error = (error != 0) || (eprintf(
         "%s",
         (char*)font->buf) < 0);
+
+    return error;
 }
 
 int ioc_set_stdout_font(const ioc_font_t* const font)
 {
-    return  (font->good == 0) || (printf(
+    int error;
+
+    error = (font == NULL);
+    
+    error = (error != 0) || (font->good == 0);
+    
+    error = (error != 0) || (setup_console(
+        STD_OUTPUT_HANDLE,
+        &stdout_handle,
+        &stdout_init_mode) != 0);
+    
+    error = (error != 0) || (printf(
         "%s",
         (char*)font->buf) < 0);
+    
+    return error;
 }
 
 int ioc_reset_stderr_font()
 {
-    return eprintf("\033[0m") < 0;
+    int error;
+    
+    error = (printf("\x1b[0m") < 0);
+    
+    error = (error != 0) || reset_console(
+        stderr_handle,
+        stderr_init_mode);
+    
+    return error;
 }
 
 int ioc_reset_stdout_font()
 {
-    return printf("\033[0m") < 0;
+    int error;
+    
+    error = (printf("\x1b[0m") < 0);
+    
+    error = (error != 0) || reset_console(
+        stdout_handle,
+        stdout_init_mode);
+    
+    return error;
 }
 
-static int setup_console(int handle)
+static int setup_console(int std_handle, HANDLE * handle, DWORD * init_mode)
 {
+    int error;
+    DWORD mode = 0;
 
+    *handle = GetStdHandle(std_handle);
+
+    error = (*handle == INVALID_HANDLE_VALUE);
+
+    error = (error != 0) || (GetConsoleMode(*handle,&mode) == 0);
+    
+    *init_mode = mode;
+    
+    mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    
+    error = (error != 0) || (SetConsoleMode(*handle,mode) == 0);
+    
+    return error;
 }
 
-static int reset_console(int handle)
+static int reset_console(HANDLE handle, DWORD init_mode)
 {
-
+    return SetConsoleMode(handle,init_mode) == 0;
 }
 
 #else
