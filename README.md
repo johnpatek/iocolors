@@ -22,7 +22,7 @@ Before printing your colored output, you must create a font. A font
 can easily be created using the `ioc_encode_font()` function.
 
 ```c
-font_t font;
+ioc_font_t font;
 ioc_encode_font(&font, BRIGHT, GREEN, BLUE);
 ```
 

@@ -1,3 +1,6 @@
+#ifndef IOCOLORS_H
+#define IOCOLORS_H
+
 /**
  * @file
  * @brief This file contains the functions from the iocolors API
@@ -6,6 +9,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdint.h>
+#include <string.h>
+
 #define IOC_BUFFER_SIZE 12
 
 
@@ -13,7 +18,7 @@ typedef struct
 {
     uint8_t buf[IOC_BUFFER_SIZE];
     uint8_t good;
-} font_t;
+} ioc_font_t;
 
 enum styles
 {
@@ -48,7 +53,7 @@ enum colors
  * @return 0 on success, nonzero on failure.
  */
 int ioc_encode_font(
-    font_t * const font, 
+    ioc_font_t * const font, 
     uint8_t style, 
     uint8_t foreground, 
     uint8_t background);
@@ -62,7 +67,7 @@ int ioc_encode_font(
  * @return 0 on success, nonzero on failure.
  */
 int ioc_decode_font(
-    const font_t * const font, 
+    const ioc_font_t * const font, 
     uint8_t * const style, 
     uint8_t * const foreground, 
     uint8_t * const background);
@@ -77,7 +82,7 @@ int ioc_decode_font(
  * @return On success, the total number of characters written is 
  *         returned. If error occurs, a negative number is returned.
  */
-int ioc_eprintf(const font_t * const font, const char * const format, ...);
+int ioc_eprintf(const ioc_font_t * const font, const char * const format, ...);
 
 /**
  * @brief Write string to standard error in a specific font and 
@@ -86,7 +91,7 @@ int ioc_eprintf(const font_t * const font, const char * const format, ...);
  * @return On success, the total number of characters written is 
  *         returned. If error occurs, a negative number is returned.
  */
-int ioc_eputs(const font_t * const font, const char * const str);
+int ioc_eputs(const ioc_font_t * const font, const char * const str);
 
 /**
  * @brief Formatted print to standard output in a specific font
@@ -98,7 +103,7 @@ int ioc_eputs(const font_t * const font, const char * const str);
  * @return On success, the total number of characters written is 
  *         returned. If error occurs, a negative number is returned.
  */
-int ioc_printf(const font_t * const font, const char * const format, ...);
+int ioc_printf(const ioc_font_t * const font, const char * const format, ...);
 
 /**
  * @brief Write string to standard output in a specific font and 
@@ -107,7 +112,7 @@ int ioc_printf(const font_t * const font, const char * const format, ...);
  * @return On success, the total number of characters written is 
  *         returned. If error occurs, a negative number is returned.
  */
-int ioc_puts(const font_t * const font, const char * const str);
+int ioc_puts(const ioc_font_t * const font, const char * const str);
 
 /**
  * @brief Formatted print to standard error
@@ -133,14 +138,14 @@ int eputs(const char * const str);
  * @param[in] font Desired font for stderr
  * @return 0 on success, nonzero on failure
  */
-int ioc_set_stderr_font(const font_t * const font);
+int ioc_set_stderr_font(const ioc_font_t * const font);
 
 /**
  * @brief Set stdout font
  * @param[in] font Desired font for stderr
  * @return 0 on success, nonzero on failure
  */
-int ioc_set_stdout_font(const font_t * const font);
+int ioc_set_stdout_font(const ioc_font_t * const font);
 
 /**
  * @brief Reset stderr font
@@ -153,3 +158,5 @@ int ioc_reset_stderr_font();
  * @return 0 on success, nonzero on failure
  */
 int ioc_reset_stdout_font();
+
+#endif /* IOCOLORS_H */

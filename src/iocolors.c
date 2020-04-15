@@ -1,14 +1,42 @@
 #include "iocolors.h"
 
+// Helper function for ioc_decode_font()
+static int count_semicolons(
+    const uint8_t* const buf,
+    const uint32_t len);
+
 int ioc_encode_font(
-    font_t* const font,
+    ioc_font_t* const font,
     uint8_t style,
     uint8_t foreground,
     uint8_t background)
 {
     int error;
+    char* buf;
+    int32_t len;
+    int32_t off;
 
     error = (font == NULL);
+    len = IOC_BUFFER_SIZE;
+    buf = NULL;
+
+    if (error == 0)
+    {
+        buf = (char*)font->buf;
+#ifdef _WIN32
+        off = sprintf_s(
+            buf,
+            len,
+            "\033[");
+#else
+        off = sprintf(
+            buf,
+            "\033[");
+#endif
+        buf += off;
+        len -= off;
+        error = (off < 0) || (len < 0);
+    }
 
     if (error == 0)
     {
@@ -21,6 +49,20 @@ int ioc_encode_font(
         case BLINK:
         case REVERSE:
         case HIDDEN:
+#ifdef _WIN32
+            off = sprintf_s(
+                buf,
+                len,
+                "%hhu",
+                style);
+#else
+            off = sprintf(
+                buf,
+                "%hhu", style);
+#endif
+            buf += off;
+            len -= off;
+            error = (off < 0) || (len < 0);
             break;
         default:
             error = 1;
@@ -32,7 +74,6 @@ int ioc_encode_font(
         switch (foreground)
         {
         case DEFAULT:
-            foreground = 0;
             break;
         case BLACK:
         case RED:
@@ -43,6 +84,21 @@ int ioc_encode_font(
         case CYAN:
         case WHITE:
             foreground += 29;
+#ifdef _WIN32
+            off = sprintf_s(
+                buf,
+                len,
+                ";%hhu",
+                foreground);
+#else
+            off = sprintf(
+                buf,
+                ";%hhu",
+                foreground);
+#endif
+            buf += off;
+            len -= off;
+            error = (off < 0) || (len < 0);
             break;
         default:
             error = 1;
@@ -54,7 +110,6 @@ int ioc_encode_font(
         switch (background)
         {
         case DEFAULT:
-            background = 0;
             break;
         case BLACK:
         case RED:
@@ -65,88 +120,131 @@ int ioc_encode_font(
         case CYAN:
         case WHITE:
             background += 39;
+#ifdef _WIN32
+            off = sprintf_s(
+                buf,
+                len,
+                ";%hhu",
+                background);
+#else
+            off = sprintf(
+                buf,
+                ";%hhu",
+                background);
+#endif
+            buf += off;
+            len -= off;
+            error = (off < 0) || (len < 0);
             break;
         default:
             error = 1;
         }
     }
+
 #ifdef _WIN32
     error = (error != 0) || (sprintf_s(
-        (char*)font->buf, IOC_BUFFER_SIZE,
-        "\033[%hhu;%hhu;%hhum",
-        style,
-        foreground,
-        background) < 0);
+        buf,
+        len,
+        "m") < 0);
 #else
     error = (error != 0) || (sprintf(
-        (char*)font->buf,
-        "\033[%hhu;%hhu;%hhum",
-        style,
-        foreground,
-        background) < 0);
+        buf,
+        "m") < 0);
 #endif
-    if (error == 0)
-    {
-        font->good = 1;
-    }
 
     return error;
 }
 
 int ioc_decode_font(
-    const font_t* const font,
+    const ioc_font_t* const font,
     uint8_t* const style,
     uint8_t* const foreground,
     uint8_t* const background)
 {
     int error;
-    int tmp_stl, tmp_fg, tmp_bg;
+    char* buf;
+    uint32_t data_buf[3];
 
-    error = (font->good == 0);
+    error = (font == NULL) || (font->good == 0);
 
-#ifdef _WIN32
-    error = error || (sscanf_s(
-        (char*)font->buf,
-        "\033[%d;%d;%d",
-        &tmp_stl,
-        &tmp_fg,
-        &tmp_bg) < 0);
-#else
-    error = error || (sscanf(
-        (char*)font->buf,
-        "\033[%d;%d;%d",
-        &tmp_stl,
-        &tmp_fg,
-        &tmp_bg) < 0);
-#endif
-
-    if (!error)
+    if (error == 0)
     {
-        *style = tmp_stl;
-
-        if (tmp_fg != DEFAULT)
+        buf = (char*)font->buf;
+        switch (
+            count_semicolons(
+                (const uint8_t * const)buf,
+                (uint32_t)strlen(buf)))
         {
-            *foreground = (uint8_t)(tmp_fg % 29);
-        }
-        else
-        {
+        case 2:
+            printf("2\n");
+#ifdef _WIN32
+            error = (error != 0) || (sscanf_s(
+                buf,
+                "\033[%d;%d;%d",
+                &data_buf[0],
+                &data_buf[1],
+                &data_buf[2]) < 0);
+#else
+            error = (error != 0) || (sscanf(
+                buf,
+                "\033[%d;%d;%d",
+                &data_buf[0],
+                &data_buf[1],
+                &data_buf[2]) < 0);
+#endif
+            if (error == 0)
+            {
+                *style = (uint8_t)data_buf[0];
+                *foreground = (uint8_t)(data_buf[1] % 29);
+                *background = (uint8_t)(data_buf[2] % 39);
+            }
+            break;
+        case 1:
+            printf("1\n");
+#ifdef _WIN32
+            error = (error != 0) || (sscanf_s(
+                buf,
+                "\033[%d;%d",
+                &data_buf[0],
+                &data_buf[1]) < 0);
+#else
+            error = (error != 0) || (sscanf(
+                buf,
+                "\033[%d;%d",
+                &data_buf[0],
+                &data_buf[1]) < 0);
+#endif
+            if (error == 0)
+            {
+                *style = (uint8_t)data_buf[0];
+                if (data_buf[1] < 40)
+                {
+                    *foreground = (uint8_t)(data_buf[1] % 29);
+                    *background = DEFAULT;
+                }
+                else
+                {
+                    *foreground = DEFAULT;
+                    *background = (uint8_t)(data_buf[1] % 39);
+                }
+            }
+            break;
+        case 0:
+            printf("0\n");
+            *style = NONE;
             *foreground = DEFAULT;
-        }
-
-        if (tmp_bg != DEFAULT)
-        {
-            *background = (uint8_t)(tmp_bg % 39);
-        }
-        else
-        {
             *background = DEFAULT;
+            break;
+        default:
+            printf("error\n");
+            error = 1;
         }
     }
 
     return error;
 }
 
-int ioc_eprintf(const font_t* const font, const char* const format, ...)
+int ioc_eprintf(const ioc_font_t* const font, const char* const format, ...)
 {
     int result;
     va_list args;
@@ -163,7 +261,7 @@ int ioc_eprintf(const font_t* const font, const char* const format, ...)
     return result;
 }
 
-int ioc_eputs(const font_t* const font, const char* const str)
+int ioc_eputs(const ioc_font_t* const font, const char* const str)
 {
     int result;
 
@@ -177,7 +275,7 @@ int ioc_eputs(const font_t* const font, const char* const str)
     return result;
 }
 
-int ioc_printf(const font_t* const font, const char* const format, ...)
+int ioc_printf(const ioc_font_t* const font, const char* const format, ...)
 {
     int result;
     va_list args;
@@ -194,7 +292,7 @@ int ioc_printf(const font_t* const font, const char* const format, ...)
     return result;
 }
 
-int ioc_puts(const font_t* const font, const char* const str)
+int ioc_puts(const ioc_font_t* const font, const char* const str)
 {
     int result;
 
@@ -220,14 +318,14 @@ int eputs(const char* const str)
     return eprintf("%s\n", str);
 }
 
-int ioc_set_stderr_font(const font_t* const font)
+int ioc_set_stderr_font(const ioc_font_t* const font)
 {
     return (font->good == 0) || (eprintf(
         "%s",
         (char*)font->buf) < 0);
 }
 
-int ioc_set_stdout_font(const font_t* const font)
+int ioc_set_stdout_font(const ioc_font_t* const font)
 {
     return (font->good == 0) || (printf(
         "%s",
@@ -242,4 +340,20 @@ int ioc_reset_stderr_font()
 int ioc_reset_stdout_font()
 {
     return printf("\033[0m") < 0;
+}
+
+static int count_semicolons(
+    const uint8_t* const buf,
+    const uint32_t len)
+{
+    uint32_t res, off;
+
+    res = 0;
+
+    for (off = 0; off < len; off++)
+    {
+        res += ((char)(*(buf + off)) == ';');
+    }
+
+    return res;
 }
