@@ -44,9 +44,9 @@ set.
 
 Another option for printing output with style is using the API to set
 the font and then make regular stdio calls. This can be done using
-`ioc_stdout_set_font()` or `ioc_stdout_set_font()`. When you want to
+`ioc_stderr_set_font()` or `ioc_stdout_set_font()`. When you want to
 revert the colors to the terminal default, you can use the functions
-`ioc_stdout_reset_font()` or `ioc_stdout_set_font()`.
+`ioc_stderr_reset_font()` or `ioc_stdout_reset_font()`.
 
 ```c
 ioc_stderr_set_font(&font);
