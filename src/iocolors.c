@@ -1,5 +1,11 @@
 #include "iocolors.h"
 
+#ifdef _WIN32
+#ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+#define ENABLE_VIRTUAL_TERMINAL_PROCESSING  0x0004
+#endif
+#endif
+
 // Helper function for ioc_decode_font()
 static int count_semicolons(
     const uint8_t* const buf,
@@ -27,7 +33,7 @@ int ioc_encode_font(
         off = sprintf_s(
             buf,
             len,
-            "\033[");
+            "\x1b[");
 #else
         off = sprintf(
             buf,
@@ -176,11 +182,10 @@ int ioc_decode_font(
                 (uint32_t)strlen(buf)))
         {
         case 2:
-            printf("2\n");
 #ifdef _WIN32
             error = (error != 0) || (sscanf_s(
                 buf,
-                "\033[%d;%d;%d",
+                "\x1b[%d;%d;%d",
                 &data_buf[0],
                 &data_buf[1],
                 &data_buf[2]) < 0);
@@ -200,11 +205,10 @@ int ioc_decode_font(
             }
             break;
         case 1:
-            printf("1\n");
 #ifdef _WIN32
             error = (error != 0) || (sscanf_s(
                 buf,
-                "\033[%d;%d",
+                "\x1b[%d;%d",
                 &data_buf[0],
                 &data_buf[1]) < 0);
 #else
@@ -230,13 +234,11 @@ int ioc_decode_font(
             }
             break;
         case 0:
-            printf("0\n");
             *style = NONE;
             *foreground = DEFAULT;
             *background = DEFAULT;
             break;
         default:
-            printf("error\n");
             error = 1;
         }
     }
@@ -318,6 +320,53 @@ int eputs(const char* const str)
     return eprintf("%s\n", str);
 }
 
+#ifdef _WIN32
+#include <Windows.h>
+
+static HANDLE stderr_handle;
+static HANDLE stdout_handle;
+static DWORD stderr_mode;
+static DWORD stdout_mode;
+
+static int setup_console(int handle);
+static int reset_console(int handle);
+
+int ioc_set_stderr_font(const ioc_font_t* const font)
+{
+    return (font->good == 0) || (eprintf(
+        "%s",
+        (char*)font->buf) < 0);
+}
+
+int ioc_set_stdout_font(const ioc_font_t* const font)
+{
+    return  (font->good == 0) || (printf(
+        "%s",
+        (char*)font->buf) < 0);
+}
+
+int ioc_reset_stderr_font()
+{
+    return eprintf("\033[0m") < 0;
+}
+
+int ioc_reset_stdout_font()
+{
+    return printf("\033[0m") < 0;
+}
+
+static int setup_console(int handle)
+{
+
+}
+
+static int reset_console(int handle)
+{
+
+}
+
+#else
+
 int ioc_set_stderr_font(const ioc_font_t* const font)
 {
     return (font->good == 0) || (eprintf(
@@ -341,6 +390,8 @@ int ioc_reset_stdout_font()
 {
     return printf("\033[0m") < 0;
 }
+
+#endif
 
 static int count_semicolons(
     const uint8_t* const buf,
