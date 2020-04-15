@@ -64,4 +64,4 @@ puts("This is a line with the default colors");
 ### Contact
 
 If you have any suggestions or would like to become a contributor,
-please [send me an email](mailto:johnpatek2@gmail.com?subject=[Github]IOColors).
+please [email me](mailto:johnpatek2@gmail.com?subject=IOColors).
