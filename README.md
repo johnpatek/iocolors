@@ -55,13 +55,14 @@ puts("Print another line to stderr");
 ioc_stderr_reset_font();
 puts("This is a line with the default colors");
 ```
-### TODO List
+
+## TODO List
 
 - [ ] Support for updated Windows Command Prompt
 - [x] CPack for Linux/Unix
 - [ ] CPack for Windows(Please help!!)
 
-### Contact
+## Contact
 
 If you have any suggestions or would like to become a contributor,
 please [email me](mailto:johnpatek2@gmail.com?subject=IOColors).
