@@ -64,7 +64,8 @@ int ioc_encode_font(
 #else
             off = sprintf(
                 buf,
-                "%hhu", style);
+                "%hhu", 
+                style);
 #endif
             buf += off;
             len -= off;
@@ -157,6 +158,8 @@ int ioc_encode_font(
         buf,
         "m") < 0);
 #endif
+
+    font->good = (error == 0)?1:0;
 
     return error;
 }

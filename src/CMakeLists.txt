@@ -7,6 +7,8 @@ include_directories(include)
 
 add_library(iocolors STATIC ${IOCOLORS_SOURCES})
 
+set_property(TARGET iocolors PROPERTY POSITION_INDEPENDENT_CODE ON)
+
 target_include_directories(iocolors PUBLIC include)
 
 install(TARGETS iocolors
